@@ -685,18 +685,21 @@ public class JsonHelper {
         InternalEObject o = (InternalEObject) obj;
 
         URI objectURI = o.eProxyURI();
+
         if (objectURI == null) {
             Resource otherResource = obj.eResource();
             if (otherResource == null) {
-                if (this.resource != null) {
-                    objectURI = this.getHREF(otherResource, obj);
-                } else {
+                if (this.resource == null) {
                     this.handleDanglingHREF(obj);
                     return null;
                 }
+                // also check for getID ?
+                objectURI = this.getHREF(this.resource, obj);
+
             } else {
                 objectURI = this.getHREF(otherResource, obj);
             }
+
         }
 
         objectURI = this.deresolve(objectURI);

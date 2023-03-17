@@ -25,7 +25,6 @@ import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1336,59 +1335,19 @@ public class GsonEObjectSerializer implements JsonSerializer<List<EObject>> {
         JsonArray jsonArray = new JsonArray();
         Object referenceValue = this.helper.getValue(eObject, eReference);
         for (EObject value : (InternalEList<? extends EObject>) referenceValue) {
-            switch (this.docKindMany(eObject, eReference)) {
-            case SAME_DOC:
+            if (!value.eIsProxy() && value.eResource() == this.helper.getResource()) {
                 String id = this.helper.getIDREF(value);
                 id = this.removeFragmentSeparator(id);
                 if (!id.isEmpty()) {
                     jsonArray.add(new JsonPrimitive(id));
                 }
-                break;
-            case CROSS_DOC:
-                if (value != null) {
-                    jsonArray.add(new JsonPrimitive(this.saveHref(value, null)));
-                }
-                break;
-            default:
+            } else {
+                jsonArray.add(new JsonPrimitive(this.saveHref(value, null)));
             }
         }
 
         jsonElement = jsonArray;
         return jsonElement;
-    }
-
-    /**
-     * Return where given ERference of the given EObject are. If at least one reference is in an other resource, all
-     * references are treated as references to other resources.
-     *
-     * @param eObject
-     *            the given EObject
-     * @param eReference
-     *            the given ERference
-     * @return where given ERference of the given EObject are
-     */
-    private int docKindMany(EObject eObject, EReference eReference) {
-        int referenceType = GsonEObjectSerializer.SAME_DOC;
-        @SuppressWarnings("unchecked")
-        InternalEList<? extends InternalEObject> internalEList = (InternalEList<? extends InternalEObject>) this.helper.getValue(eObject, eReference);
-
-        if (internalEList.isEmpty()) {
-            referenceType = GsonEObjectSerializer.SKIP;
-        }
-
-        Iterator<? extends InternalEObject> it = internalEList.iterator();
-        while (referenceType != GsonEObjectSerializer.SKIP && referenceType != GsonEObjectSerializer.CROSS_DOC && it.hasNext()) {
-            InternalEObject internalEObject = it.next();
-            if (internalEObject.eIsProxy()) {
-                referenceType = GsonEObjectSerializer.CROSS_DOC;
-            } else {
-                Resource resource = internalEObject.eResource();
-                if (resource != this.helper.getResource() && resource != null) {
-                    referenceType = GsonEObjectSerializer.CROSS_DOC;
-                }
-            }
-        }
-        return referenceType;
     }
 
     /**
